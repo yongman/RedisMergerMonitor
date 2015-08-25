@@ -74,6 +74,7 @@ func infoFilter(info *redis.RedisInfo) {
 	filterMap["loading"] = true
 	filterMap["instantaneous_ops_per_sec"] = true
 	filterMap["role"] = true
+	filterMap["aof_rewrite_in_progress"] = true
 
 	//used by slave
 	filterMap["master_repl_offset"] = true

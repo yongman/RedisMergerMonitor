@@ -9,19 +9,18 @@ import (
 	"net/http"
 )
 
-func EchoServer(ws *websocket.Conn) {
+func StatusServer(ws *websocket.Conn) {
 	fmt.Println("ws:new client")
 	for {
 		<-inspector.ChanDone
 		inspector.MapMutex.Lock()
 		//choose the info we care
-
 		data, err := json.Marshal(inspector.SlaveInfoFilter(inspector.ServerInfoSnap))
+		inspector.MapMutex.Unlock()
 		if err != nil {
 			fmt.Println(err)
 			continue
 		}
-		inspector.MapMutex.Unlock()
 		_, err = ws.Write([]byte(data))
 		if err != nil {
 			break
@@ -32,7 +31,7 @@ func EchoServer(ws *websocket.Conn) {
 
 func RunWebsocketServer(meta *c.MonitorConf) {
 
-	http.Handle("/state", websocket.Handler(EchoServer))
+	http.Handle("/state", websocket.Handler(StatusServer))
 
 	err := http.ListenAndServe(meta.WsListen, nil)
 	if err != nil {
