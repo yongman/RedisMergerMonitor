@@ -11,8 +11,9 @@ import (
 
 func StatusServer(ws *websocket.Conn) {
 	fmt.Println("ws:new client")
+	c := inspector.ClientRegiste(ws)
 	for {
-		<-inspector.ChanDone
+		<-c.C
 		inspector.MapMutex.Lock()
 		//choose the info we care
 		data, err := json.Marshal(inspector.SlaveInfoFilter(inspector.ServerInfoSnap))
@@ -26,6 +27,7 @@ func StatusServer(ws *websocket.Conn) {
 			break
 		}
 	}
+	inspector.ClientUnreg(c)
 	fmt.Println("ws:client closed")
 }
 

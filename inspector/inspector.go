@@ -4,6 +4,7 @@ import (
 	"../conf"
 	"../redis"
 	"fmt"
+	"golang.org/x/net/websocket"
 	"sync"
 	"time"
 )
@@ -16,11 +17,19 @@ var ChanDone chan string
 
 var addrFilterMap map[string]bool
 
+type Client struct {
+	C  chan string
+	Ws *websocket.Conn
+}
+
+var wsClients []*Client
+
 func Init() {
 	ServerInfoSnap = make(map[string]*redis.RedisInfo)
 	addrFilterMap = make(map[string]bool)
 	MapMutex = sync.RWMutex{}
 	ChanDone = make(chan string)
+	wsClients = make([]*Client, 0)
 }
 
 func Run(meta *conf.MonitorConf) {
@@ -54,7 +63,10 @@ func Run(meta *conf.MonitorConf) {
 			}
 		}
 		inner(meta)
-		ChanDone <- "go"
+		//notify all the clients
+		for _, c := range wsClients {
+			c.C <- "go"
+		}
 		time.Sleep(1000 * time.Millisecond)
 	}
 }
@@ -111,4 +123,22 @@ func SlaveInfoFilter(snapshot InfoMap) InfoMap {
 		}
 	}
 	return slaveMap
+}
+
+func ClientRegiste(ws *websocket.Conn) *Client {
+	client := &Client{
+		C:  make(chan string),
+		Ws: ws,
+	}
+	wsClients = append(wsClients, client)
+	return client
+}
+
+func ClientUnreg(cli *Client) {
+	for i, c := range wsClients {
+		if c == cli {
+			wsClients = append(wsClients[:i], wsClients[i+1:]...)
+			break
+		}
+	}
 }
