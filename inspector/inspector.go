@@ -62,11 +62,14 @@ func Run(meta *conf.MonitorConf) {
 				}
 			}
 		}
-		inner(meta)
-		//notify all the clients
-		for _, c := range wsClients {
-			c.C <- "go"
+		if len(wsClients) > 0 {
+			inner(meta)
+			//notify all the clients
+			for _, c := range wsClients {
+				c.C <- "go"
+			}
 		}
+		fmt.Printf("total: %d clients\n", len(wsClients))
 		time.Sleep(1000 * time.Millisecond)
 	}
 }
